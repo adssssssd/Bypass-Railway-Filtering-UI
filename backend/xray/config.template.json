@@ -1,0 +1,20 @@
+{
+  "log": {"loglevel": "warning"},
+  "inbounds": [
+    {
+      "port": 3128,
+      "listen": "127.0.0.1",
+      "protocol": "vless",
+      "settings": {
+        "clients": [{"id": "REPLACE_UUID_HERE", "level": 0}],
+        "decryption": "none"
+      },
+      "streamSettings": {
+        "network": "ws",
+        "security": "none",
+        "wsSettings": {"path": "/REPLACE_WS_PATH"}
+      }
+    }
+  ],
+  "outbounds": [{"protocol": "freedom", "settings": {}}]
+}
