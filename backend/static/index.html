@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>⚡ Hermes Tunnel — VLESS+WS Panel</title>
+<style>
+  :root{
+    --bg1:#080d1e; --bg2:#0f1633; --card:#141c40; --card2:#1b2348;
+    --txt:#e8ecff; --dim:#93a0cc; --acc:#7c6cff; --acc2:#4ee6c8;
+    --ok:#34d399; --err:#f87171; --warn:#fbbf24;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Segoe UI',system-ui,sans-serif;
+    background:radial-gradient(1200px 600px at 20% -10%,#2a2355 0%,var(--bg1) 55%),var(--bg1);
+    color:var(--txt); min-height:100vh; padding:28px 16px 60px;
+  }
+  .wrap{max-width:940px;margin:0 auto}
+  h1{font-size:26px;font-weight:800;letter-spacing:.5px}
+  h1 span{color:var(--acc2)}
+  .sub{color:var(--dim);font-size:13px;margin:6px 0 22px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:760px){.grid{grid-template-columns:1fr}}
+  .card{background:linear-gradient(180deg,var(--card),var(--bg2));
+    border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:18px}
+  .card h3{font-size:15px;margin-bottom:12px}
+  label{display:block;font-size:11px;color:var(--dim);margin:10px 0 4px;font-weight:600}
+  input{width:100%;background:#0d1330;border:1px solid rgba(255,255,255,.1);
+    color:var(--txt);border-radius:10px;padding:10px 12px;font-size:13px;outline:none}
+  input:focus{border-color:var(--acc)}
+  button{background:linear-gradient(90deg,var(--acc),#9d5cff);color:#fff;border:none;
+    border-radius:10px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer;
+    transition:.15s}
+  button:hover{filter:brightness(1.15)}
+  button.green{background:linear-gradient(90deg,#0ea5a0,#4ee6c8);color:#04222a}
+  button:disabled{opacity:.55;cursor:not-allowed}
+  .row{display:flex;gap:8px;align-items:center}
+  .mt{margin-top:14px}
+  .statusbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;
+    margin-bottom:16px;font-size:12px;color:var(--dim)}
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+  .dot.on{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+  .log{background:#0a0f26;border:1px solid rgba(255,255,255,.07);border-radius:12px;
+    padding:12px;font-family:Consolas,monospace;font-size:12px;white-space:pre-wrap;
+    max-height:200px;overflow:auto;color:#b9c4f0;line-height:1.5}
+  .cfg{background:rgba(255,255,255,.04);border-radius:10px;padding:10px;margin-top:10px;
+    font-family:Consolas,monospace;font-size:11px;word-break:break-all;line-height:1.6}
+  .ok{color:var(--ok)} .err{color:var(--err)} .dim{color:var(--dim)}
+  .small{font-size:11px;color:var(--dim)}
+  .warn{color:var(--warn)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>⚡ Hermes <span>Tunnel</span></h1>
+  <div class="sub">Xray VLESS+WS — Railway backend panel + Cloudflare worker builder</div>
+
+  <div class="statusbar">
+    <span><span class="dot" id="dot"></span> xray: <b id="stXray">checking…</b></span>
+    <span>·</span>
+    <span>router: <b id="stRouter">checking…</b></span>
+    <span>·</span>
+    <span>WS path: <b id="stPath">—</b></span>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h3>🤖 Build Cloudflare Worker</h3>
+      <p class="small" style="margin-bottom:4px">Deploy the path-based bridge worker directly with your CF API token — no dashboard needed.</p>
+      <label>Cloudflare API token (cfut_…)</label>
+      <input id="inTok" type="password" placeholder="cfut_xxxxxxxxxxxxxxxx" autocomplete="off">
+      <label>Railway backend domain</label>
+      <input id="inBackend" placeholder="yourapp.up.railway.app">
+      <label>WS path (auto if empty)</label>
+      <input id="inPath" placeholder="/vpn-xxxxxx">
+      <label>Worker name (auto if empty)</label>
+      <input id="inWname" placeholder="svc-xxxxxxxx">
+      <div class="row mt">
+        <button class="green" id="btnBuild">Build Worker</button>
+        <button id="btnCopyBuilt" disabled>Copy link</button>
+      </div>
+      <div class="cfg" id="outBuilt" style="min-height:66px">Enter token + backend, press Build Worker…</div>
+    </div>
+
+    <div class="card">
+      <h3>🔑 Credentials / manual link</h3>
+      <label>UUID (VLESS client id)</label>
+      <input id="inUUID" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+      <label>WS path</label>
+      <input id="inPath2" placeholder="/vpn-xxxxxx">
+      <label>Backend domain</label>
+      <input id="inBackend2" placeholder="yourapp.up.railway.app">
+      <label>Worker domain (optional)</label>
+      <input id="inWorker" placeholder="svc-xxxx.workers.dev — leave empty for direct">
+      <div class="row mt">
+        <button class="green" id="btnGen">Generate client link</button>
+        <button id="btnCopy">Copy</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mt">
+    <h3>🔗 Client config</h3>
+    <div class="log" id="outLink" style="min-height:120px">Fill the fields and press Generate…</div>
+    <div class="small mt" id="outHint"></div>
+  </div>
+
+  <div class="card mt">
+    <h3>🩺 Status</h3>
+    <div class="log" id="outStatus">Loading…</div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function parseDefaultPath(){
+  fetch('/api/status').then(r=>r.json()).then(d=>{
+    if(d.uuid) $('inUUID').value = d.uuid;
+    if(d.ws_path){ $('inPath').value = d.ws_path; $('inPath2').value = d.ws_path; }
+    if(d.backend){ $('inBackend').value = d.backend; $('inBackend2').value = d.backend; }
+    if(d.worker) $('inWorker').value = d.worker;
+    $('stPath').textContent = d.ws_path || '—';
+    $('stXray').textContent = d.xray ? 'UP ✅' : 'DOWN ❌';
+    $('stXray').style.color = d.xray ? 'var(--ok)' : 'var(--err)';
+    $('stRouter').textContent = d.router ? 'UP ✅' : 'DOWN ❌';
+    $('stRouter').style.color = d.router ? 'var(--ok)' : 'var(--err)';
+    $('dot').className = 'dot ' + (d.xray && d.router ? 'on' : '');
+    $('outStatus').innerHTML = JSON.stringify(d, null, 2);
+  }).catch(()=>{
+    $('outStatus').textContent = 'Status endpoint unavailable — are you behind the router?';
+  });
+}
+
+// ---------- Build Worker (CF token) ----------
+$('btnBuild').addEventListener('click', ()=>{
+  const token = $('inTok').value.trim();
+  const backend = $('inBackend').value.trim();
+  const ws_path = $('inPath').value.trim();
+  const wname = $('inWname').value.trim();
+  if(!token || !backend){ $('outBuilt').innerHTML = '<span class="err">Token and backend are required.</span>'; return; }
+  $('btnBuild').disabled = true;
+  $('outBuilt').textContent = 'Deploying worker on Cloudflare…';
+  fetch('/api/build-worker', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({token, backend, ws_path, wname}),
+  }).then(r=>r.json()).then(d=>{
+    $('btnBuild').disabled = false;
+    if(d.error){ $('outBuilt').innerHTML = '<span class="err">' + d.error + '</span>'; return; }
+    $('inUUID').value = d.uuid; $('inPath2').value = d.ws_path;
+    $('inWorker').value = d.worker;
+    $('outBuilt').innerHTML =
+      '<span class="ok">✅ Worker deployed: ' + d.worker + '</span>\n' +
+      'UUID: ' + d.uuid + '\nWS path: ' + d.ws_path + '\n\n' + d.link;
+    $('btnCopyBuilt').disabled = false;
+    $('btnCopyBuilt').dataset.link = d.link;
+    $('outHint').textContent = 'Worker live — import the link below into v2rayNG/Hiddify.';
+  }).catch(e=>{
+    $('btnBuild').disabled = false;
+    $('outBuilt').innerHTML = '<span class="err">Request failed: ' + e + '</span>';
+  });
+});
+
+$('btnCopyBuilt').addEventListener('click', ()=>{
+  const txt = $('btnCopyBuilt').dataset.link || '';
+  if(!txt) return;
+  if(navigator.clipboard){ navigator.clipboard.writeText(txt).then(()=>{ $('outBuilt').textContent = 'Copied ✅'; }); }
+});
+
+// ---------- Manual generate ----------
+$('btnGen').addEventListener('click', ()=>{
+  const uuid = $('inUUID').value.trim();
+  const path = $('inPath2').value.trim();
+  const backend = $('inBackend2').value.trim();
+  const worker = $('inWorker').value.trim();
+  if(!uuid || !path) { $('outLink').textContent = 'UUID and WS path are required.'; return; }
+  if(!path.startsWith('/')) { $('outLink').textContent = 'WS path must start with /'; return; }
+  if(!worker){
+    const host = backend || 'YOURAPP.up.railway.app';
+    const enc = encodeURIComponent('/' + host + ':443' + path);
+    const link = 'vless://' + uuid + '@' + host + ':443?path=' + enc +
+      '&security=tls&encryption=none&insecure=0&host=' + host +
+      '&fp=chrome&type=ws&allowInsecure=0&sni=' + host + '#Bypass-Railway';
+    $('outLink').textContent = link;
+  } else {
+    const enc = encodeURIComponent('/' + backend + ':443' + path);
+    const link = 'vless://' + uuid + '@' + worker + ':443?path=' + enc +
+      '&security=tls&encryption=none&insecure=0&host=' + worker +
+      '&fp=chrome&type=ws&allowInsecure=0&sni=' + worker + '#Bypass-Railway';
+    $('outLink').textContent = link;
+  }
+  $('outHint').textContent = 'v2rayNG "ping" always fails for VLESS-over-WS — test by browsing.';
+});
+
+$('btnCopy').addEventListener('click', ()=>{
+  const txt = $('outLink').textContent;
+  if(!txt || txt.startsWith('Fill')) return;
+  if(navigator.clipboard){ navigator.clipboard.writeText(txt); $('outHint').textContent = 'Copied ✅'; }
+});
+
+parseDefaultPath();
+</script>
+</body>
+</html>
