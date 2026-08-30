@@ -17,6 +17,10 @@ WS_PATH_BARE="${WS_PATH#/}"
 echo "[entrypoint] UUID=$UUID"
 echo "[entrypoint] WS_PATH=$WS_PATH"
 
+# --- export so router.py (subprocess) sees the REAL credentials ---
+export UUID
+export WS_PATH
+
 mkdir -p /app/xray
 sed -e "s|REPLACE_UUID_HERE|$UUID|g" \
     -e "s|REPLACE_WS_PATH|$WS_PATH_BARE|g" \
