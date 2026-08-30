@@ -26,6 +26,7 @@ RUN set -eux; \
 COPY backend/router.py .
 COPY backend/xray/config.template.json /app/config.template.json
 COPY backend/entrypoint.sh .
+COPY backend/static/ /app/static/
 RUN chmod +x entrypoint.sh
 
 EXPOSE 8080
