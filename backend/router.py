@@ -23,8 +23,8 @@ import uuid as _uuid
 HOST = "0.0.0.0"
 PORT = int(os.environ.get("PORT", "8080"))
 XRAY_PORT = int(os.environ.get("XRAY_PORT", "3128"))
-UUID = os.environ.get("UUID", "")
-WS_PATH = os.environ.get("WS_PATH", "/vpn-unknown")
+UUID = os.environ.get("UUID", "") or str(_uuid.uuid4())
+WS_PATH = os.environ.get("WS_PATH", "") or "/vpn-" + "".join(random.choices(string.ascii_lowercase + string.digits, k=6))
 BACKEND = os.environ.get("BACKEND_DOMAIN", os.environ.get("RAILWAY_PUBLIC_DOMAIN", ""))
 
 WS_PATTERN = re.compile(r"^/(?:vpn-[^/]+(?:/.*)?|ws/[^/]+(?:/.*)?)$")
@@ -104,7 +104,7 @@ def _cf_request(method, path, token, data=None, headers=None):
     return j.get("result")
 
 
-def build_worker_with_token(token, backend, ws_path=None, wname=None):
+def build_worker_with_token(token, backend, ws_path=None, wname=None, uuid=None):
     """Deploy a path-based worker and return the final vless link."""
     token = token.strip()
     if not token:
@@ -119,7 +119,9 @@ def build_worker_with_token(token, backend, ws_path=None, wname=None):
         ws_path = "/vpn-" + "".join(random.choices(string.ascii_lowercase + string.digits, k=6))
     if not ws_path.startswith("/"):
         ws_path = "/" + ws_path
-    uuid = str(_uuid.uuid4())
+    uuid = (uuid or "").strip() or str(_uuid.uuid4())
+    if not re.match(r"^[0-9a-fA-F-]{8,64}$", uuid):
+        raise RuntimeError("invalid UUID")
     if not wname or not wname.strip():
         wname = "svc-" + "".join(random.choices(string.ascii_lowercase + string.digits, k=8))
     if not re.match(r"^[A-Za-z0-9_-]{1,64}$", wname):
@@ -264,7 +266,8 @@ async def handle(reader, writer):
                     payload.get("token", ""),
                     payload.get("backend", ""),
                     payload.get("ws_path", ""),
-                    payload.get("wname", ""))
+                    payload.get("wname", ""),
+                    payload.get("uuid", "") or UUID)
             try:
                 result = await asyncio.to_thread(do_build)
                 out = json.dumps(result).encode()
