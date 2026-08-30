@@ -296,7 +296,9 @@ async def handle(reader, writer):
                 pass  # fall through to status page
 
         # --- default: simple status page ---
-        body = STATUS_PAGE.format(path=WS_PATH).encode()
+        # NOTE: use .replace() not .format() — the CSS braces ({font-family…})
+        # would otherwise raise KeyError. Only one real placeholder ({path}).
+        body = STATUS_PAGE.replace("{path}", WS_PATH).encode()
         resp = (b"HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n"
                 b"Content-Length: " + str(len(body)).encode() + b"\r\n"
                 b"Connection: close\r\n\r\n" + body)
