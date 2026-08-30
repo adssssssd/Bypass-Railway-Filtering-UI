@@ -137,15 +137,17 @@ function parseDefaultPath(){
 $('btnBuild').addEventListener('click', ()=>{
   const token = $('inTok').value.trim();
   const backend = $('inBackend').value.trim();
+  // prefer the ACTUAL backend + uuid + ws path from /api/status (the xray in the container)
   const ws_path = $('inPath').value.trim();
   const wname = $('inWname').value.trim();
+  const uuid = $('inUUID').value.trim();
   if(!token || !backend){ $('outBuilt').innerHTML = '<span class="err">Token and backend are required.</span>'; return; }
   $('btnBuild').disabled = true;
   $('outBuilt').textContent = 'Deploying worker on Cloudflare…';
   fetch('/api/build-worker', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({token, backend, ws_path, wname}),
+    body: JSON.stringify({token, backend, ws_path, wname, uuid}),
   }).then(r=>r.json()).then(d=>{
     $('btnBuild').disabled = false;
     if(d.error){ $('outBuilt').innerHTML = '<span class="err">' + d.error + '</span>'; return; }
